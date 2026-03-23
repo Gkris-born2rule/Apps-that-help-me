@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Duty Roster</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --bg:#0f172a;
+  --card:#1e293b;
+  --card2:#243046;
+  --border:#2d3f57;
+  --text:#f0f6ff;
+  --muted:#64748b;
+  --accent:#3b82f6;
+
+  --duty:#3b82f6;
+  --pdo:#475569;
+  --icu:#10b981;
+  --ot:#f59e0b;
+  --endo:#8b5cf6;
+  --leave:#ef4444;
+}
+
+html,body{height:100%;overflow-x:hidden}
+body{
+  font-family:'Outfit',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  display:flex;flex-direction:column;
+}
+
+/* ── HEADER ── */
+.hdr{
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:14px 16px 10px;
+  position:sticky;top:0;z-index:100;
+}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.hdr-title{font-size:16px;font-weight:800;letter-spacing:-.02em}
+.hdr-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.icon-btn{
+  background:var(--card2);border:1px solid var(--border);
+  border-radius:8px;padding:7px 10px;
+  font-size:14px;cursor:pointer;color:var(--text);
+  font-family:inherit;
+}
+.hdr-row{display:flex;gap:8px;align-items:center}
+.hsel{
+  flex:1;background:var(--card2);color:var(--text);
+  border:1px solid var(--border);border-radius:8px;
+  padding:8px 10px;font-family:inherit;font-size:13px;
+  font-weight:500;
+}
+.hsel:focus{outline:none;border-color:var(--accent)}
+.hy{
+  width:72px;background:var(--card2);color:var(--text);
+  border:1px solid var(--border);border-radius:8px;
+  padding:8px 8px;font-family:inherit;font-size:13px;
+  font-weight:500;
+}
+.hy:focus{outline:none;border-color:var(--accent)}
+.gen-btn{
+  background:var(--accent);color:white;border:none;
+  border-radius:8px;padding:8px 14px;
+  font-family:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;white-space:nowrap;letter-spacing:.01em;
+  transition:opacity .15s;
+}
+.gen-btn:active{opacity:.8}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;background:var(--card);
+  border-bottom:1px solid var(--border);
+}
+.tab{
+  flex:1;padding:10px 4px;
+  font-family:inherit;font-size:12px;font-weight:600;
+  color:var(--muted);background:none;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .2s;
+  letter-spacing:.02em;
+}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── MAIN ── */
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px}
+
+/* ── FILTER BAR ── */
+.filter-bar{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 12px;overflow-x:auto;
+  border-bottom:1px solid var(--border);
+  background:var(--card);white-space:nowrap;
+  -webkit-overflow-scrolling:touch;
+}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;flex-shrink:0}
+.fbtn{
+  padding:5px 11px;border-radius:20px;
+  border:1px solid var(--border);background:var(--card2);
+  color:var(--muted);font-family:inherit;font-size:11px;font-weight:700;
+  cursor:pointer;flex-shrink:0;transition:all .15s;
+}
+.fbtn.active{color:white;border-color:transparent}
+.fbtn[data-type="all"].active{background:#334155}
+.fbtn[data-type="duty"].active{background:var(--duty)}
+.fbtn[data-type="pdo"].active{background:var(--pdo)}
+.fbtn[data-type="icu"].active{background:var(--icu)}
+.fbtn[data-type="ot"].active{background:var(--ot)}
+.fbtn[data-type="endo"].active{background:var(--endo)}
+.fbtn[data-type="leave"].active{background:var(--leave)}
+
+/* ── NOTICES ── */
+.notices{padding:10px 12px 0}
+.notice{
+  border-radius:8px;padding:8px 12px;font-size:11px;
+  margin-bottom:6px;line-height:1.5;
+}
+.n-ok  {background:#052e16;border:1px solid #166534;color:#86efac}
+.n-warn{background:#1c1400;border:1px solid #854d0e;color:#fcd34d}
+.n-info{background:#0c1a2e;border:1px solid #1e40af;color:#93c5fd}
+
+/* ── TABLE VIEW ── */
+#tabTable{padding:10px 0 0}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%}
+.sticky-table{width:100%;border-collapse:collapse;min-width:520px}
+.sticky-table thead th{
+  background:#0d1f35;
+  padding:8px 5px;font-size:10px;font-weight:700;
+  color:#94a3b8;text-align:center;white-space:nowrap;
+  letter-spacing:.06em;border-bottom:1px solid var(--border);
+}
+.sticky-table thead th:first-child{
+  text-align:left;padding-left:12px;min-width:56px;
+}
+.sticky-table tbody td{
+  padding:5px 4px;text-align:center;font-size:10px;
+  border-bottom:1px solid #1a2a3d;
+}
+.sticky-table tbody td:first-child{
+  padding-left:10px;text-align:left;min-width:56px;
+}
+.sticky-table tbody tr.is-sun td:first-child{border-left:3px solid #ef4444}
+.sticky-table tbody tr.is-sat td:first-child{border-left:3px solid #3b82f6}
+.sticky-table tbody tr.is-sun{background:rgba(239,68,68,.08)}
+.sticky-table tbody tr.is-sat{background:rgba(59,130,246,.08)}
+
+.date-cell{
+  display:flex;flex-direction:column;line-height:1.2;padding:3px 0;
+}
+.dc-day{font-size:10px;font-weight:800}
+.dc-num{font-size:9px;color:var(--muted)}
+.is-sun .dc-day{color:#f87171}
+.is-sat .dc-day{color:#60a5fa}
+
+.chip{
+  display:inline-block;
+  padding:3px 4px;border-radius:4px;
+  font-size:9px;font-weight:700;letter-spacing:.03em;
+  min-width:32px;text-align:center;
+  cursor:pointer;
+}
+.c-duty {background:rgba(59,130,246,.25);color:#93c5fd}
+.c-pdo  {background:rgba(71,85,105,.3);color:#94a3b8}
+.c-icu  {background:rgba(16,185,129,.25);color:#6ee7b7}
+.c-ot   {background:rgba(245,158,11,.25);color:#fcd34d}
+.c-endo {background:rgba(139,92,246,.25);color:#c4b5fd}
+.c-leave{background:rgba(239,68,68,.25);color:#fca5a5}
+.c-empty{background:rgba(255,255,255,.03);color:#334155;font-weight:400}
+
+/* ── STATS VIEW ── */
+#tabStats{padding:12px}
+.stats-header{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;margin-bottom:8px;padding-left:2px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:12px;margin-bottom:8px;
+}
+.sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sc-name{font-size:14px;font-weight:700}
+.sc-badge{
+  font-size:10px;font-weight:700;padding:3px 8px;
+  border-radius:20px;letter-spacing:.03em;
+}
+.badge-ok  {background:rgba(16,185,129,.15);color:#34d399}
+.badge-warn{background:rgba(239,68,68,.15);color:#f87171}
+.sc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sc-box{
+  border-radius:7px;padding:7px 5px;text-align:center;
+}
+.sc-val{font-size:20px;font-weight:800;line-height:1}
+.sc-lbl{font-size:9px;font-weight:700;letter-spacing:.07em;opacity:.7;margin-top:2px}
+.sc-target{font-size:8px;opacity:.5;margin-top:1px}
+
+/* ── REQUESTS VIEW ── */
+#tabReqs{padding:12px}
+.req-section-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;margin-bottom:8px}
+.req-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.fsel{
+  background:var(--card2);color:var(--text);
+  border:1px solid var(--border);border-radius:8px;
+  padding:10px 10px;font-family:inherit;font-size:13px;
+  width:100%;
+}
+.fsel:focus{outline:none;border-color:var(--accent)}
+.add-btn{
+  width:100%;background:var(--accent);color:white;
+  border:none;border-radius:8px;padding:11px;
+  font-family:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;margin-bottom:14px;
+}
+.add-btn:active{opacity:.8}
+.req-list{display:flex;flex-direction:column;gap:6px}
+.req-item{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ri-info{font-size:13px;font-weight:600}
+.ri-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.ri-del{
+  background:rgba(239,68,68,.15);color:#f87171;
+  border:none;border-radius:6px;padding:5px 9px;
+  font-size:12px;cursor:pointer;font-family:inherit;
+}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state .ei{font-size:32px;margin-bottom:8px}
+.empty-state h3{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text)}
+.empty-state p{font-size:12px}
+
+/* ── EDIT SHEET ── */
+#editSheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--card);border-top:1px solid var(--border);
+  border-radius:16px 16px 0 0;
+  padding:0 0 env(safe-area-inset-bottom,0);
+  transform:translateY(100%);transition:transform .25s ease;
+}
+#editSheet.open{transform:translateY(0)}
+.sheet-handle{
+  width:36px;height:3px;background:var(--border);
+  border-radius:2px;margin:10px auto 0;
+}
+.sheet-title{
+  font-size:12px;font-weight:700;color:var(--muted);
+  letter-spacing:.08em;padding:10px 16px 6px;
+}
+.sheet-opts{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  padding:0 12px 16px;
+}
+.sheet-opt{
+  background:var(--card2);border:1px solid var(--border);
+  border-radius:8px;padding:10px 6px;text-align:center;
+  cursor:pointer;transition:transform .1s;
+}
+.sheet-opt:active{transform:scale(.95)}
+.so-dot{width:10px;height:10px;border-radius:50%;margin:0 auto 5px}
+.so-lbl{font-size:11px;font-weight:700}
+
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:190;display:none}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <div class="hdr-title">🏥 Duty Roster</div>
+      <div class="hdr-sub">Hospital Schedule Generator</div>
+    </div>
+    <button class="icon-btn" onclick="switchTab('reqs')">📋</button>
+  </div>
+  <div class="hdr-row">
+    <select class="hsel" id="monthSel">
+      <option value="1">January</option><option value="2">February</option>
+      <option value="3" selected>March</option><option value="4">April</option>
+      <option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option>
+      <option value="9">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+    <input class="hy" type="number" id="yearInp" value="2026" min="2020" max="2035">
+    <button class="gen-btn" onclick="runGenerate()">⚡ Generate</button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" id="tab-table" onclick="switchTab('table')">📅 TABLE</button>
+  <button class="tab" id="tab-stats" onclick="switchTab('stats')">📊 STATS</button>
+  <button class="tab" id="tab-reqs"  onclick="switchTab('reqs')">📋 REQUESTS</button>
+</div>
+
+<!-- Main -->
+<main>
+
+  <!-- Notices -->
+  <div class="notices" id="notices"></div>
+
+  <!-- Table Tab -->
+  <div id="tabTable">
+    <div class="empty-state">
+      <div class="ei">📅</div>
+      <h3>No schedule yet</h3>
+      <p>Tap ⚡ Generate to create the roster</p>
+    </div>
+  </div>
+
+  <!-- Stats Tab -->
+  <div id="tabStats" style="display:none">
+    <div class="empty-state">
+      <div class="ei">📊</div>
+      <h3>No data yet</h3>
+      <p>Generate a schedule first</p>
+    </div>
+  </div>
+
+  <!-- Requests Tab -->
+  <div id="tabReqs" style="display:none">
+    <div class="req-section-title">ADD REQUEST OR LEAVE</div>
+    <div class="req-row">
+      <select class="fsel" id="rDoc">
+        <option value="0">Dr. Raj</option><option value="1">Dr. Henry</option>
+        <option value="2">Dr. Divya</option><option value="3">Dr. Nisha</option>
+        <option value="4">Dr. Gowtham</option><option value="5">Dr. Venkat</option>
+      </select>
+      <select class="fsel" id="rType">
+        <option value="duty">Duty Request</option>
+        <option value="leave">Leave</option>
+        <option value="noduty">No Duty</option>
+      </select>
+    </div>
+    <input class="fsel" type="number" id="rDay" placeholder="Day number (1–31)" min="1" max="31" style="margin-bottom:8px">
+    <button class="add-btn" onclick="addReq()">+ Add Request</button>
+    <div class="req-section-title">CURRENT REQUESTS</div>
+    <div class="req-list" id="reqList">
+      <div class="empty-state" style="padding:20px">
+        <p>No requests added yet</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Edit Bottom Sheet -->
+<div id="overlay" onclick="closeSheet()"></div>
+<div id="editSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">CHANGE ASSIGNMENT</div>
+  <div class="sheet-opts" id="sheetOpts"></div>
+</div>
+
+<script>
+'use strict';
+const DOC_SHORT  = ['Raj','Henry','Divya','Nisha','Gowtham','Venkat'];
+const DOC_NAMES  = ['Dr. Raj','Dr. Henry','Dr. Divya','Dr. Nisha','Dr. Gowtham','Dr. Venkat'];
+const G=4, NON_G=[0,1,2,3,5];
+const BASE_TARGETS=[5,5,6,6,3,5];
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TYPES=['duty','pdo','icu','ot','endo','leave',''];
+const T_LABEL={duty:'DUTY',pdo:'PDO',icu:'ICU',ot:'OT',endo:'ENDO',leave:'LEAVE','':'-'};
+const T_CLS  ={duty:'c-duty',pdo:'c-pdo',icu:'c-icu',ot:'c-ot',endo:'c-endo',leave:'c-leave','':'c-empty'};
+const T_DOT  ={duty:'var(--duty)',pdo:'var(--pdo)',icu:'var(--icu)',ot:'var(--ot)',endo:'var(--endo)',leave:'var(--leave)','':'#1e293b'};
+const T_BG   ={duty:'rgba(59,130,246,.15)',pdo:'rgba(71,85,105,.2)',icu:'rgba(16,185,129,.15)',ot:'rgba(245,158,11,.15)',endo:'rgba(139,92,246,.15)',leave:'rgba(239,68,68,.15)'};
+const T_COL  ={duty:'#93c5fd',pdo:'#94a3b8',icu:'#6ee7b7',ot:'#fcd34d',endo:'#c4b5fd',leave:'#fca5a5'};
+
+let schedule=[], reqs=[], curMonth=3, curYear=2026, curTargets=[...BASE_TARGETS], activeFilter='';
+let editPos={r:-1,c:-1};
+
+const getDow=(y,m,d)=>new Date(y,m-1,d).getDay();
+const getDim=(y,m)=>new Date(y,m,0).getDate();
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+function runGenerate(){
+  curMonth=+document.getElementById('monthSel').value;
+  curYear =+document.getElementById('yearInp').value;
+  const D=getDim(curYear,curMonth);
+  curTargets=[...BASE_TARGETS];
+  if(D===31) curTargets[G]=4;
+
+  const dowArr=Array.from({length:D},(_,i)=>getDow(curYear,curMonth,i+1));
+  const leaveSet=Array.from({length:D},()=>new Set());
+  const noDutySet=Array.from({length:D},()=>new Set());
+  for(const r of reqs){
+    if(r.type==='leave'&&r.day>=1&&r.day<=D) leaveSet[r.day-1].add(r.doctor);
+    if(r.type==='noduty'&&r.day>=1&&r.day<=D) noDutySet[r.day-1].add(r.doctor);
+  }
+
+  const dutyCal=Array(D).fill(-1);
+  const left=[...curTargets];
+
+  function canDuty(doc,i){
+    if(dutyCal[i]!==-1) return false;
+    if(left[doc]<=0)    return false;
+    if(leaveSet[i].has(doc)) return false;
+    if(noDutySet[i].has(doc)) return false;
+    if(i+1<D&&leaveSet[i+1].has(doc)) return false;
+    if(i>0&&dutyCal[i-1]===doc) return false;
+    if(doc===G&&(dowArr[i]===0||dowArr[i]===6)) return false;
+    return true;
+  }
+  function assign(doc,i){dutyCal[i]=doc;left[doc]--;}
+
+  for(const r of reqs) if(r.type==='duty'&&r.day>=1&&r.day<=D) if(canDuty(r.doctor,r.day-1)) assign(r.doctor,r.day-1);
+
+  const sats=[],suns=[],fris=[];
+  for(let i=0;i<D;i++){if(dowArr[i]===6)sats.push(i);if(dowArr[i]===0)suns.push(i);if(dowArr[i]===5)fris.push(i);}
+
+  const hasSat=new Set(sats.filter(i=>dutyCal[i]!==-1).map(i=>dutyCal[i]));
+  const hasSun=new Set(suns.filter(i=>dutyCal[i]!==-1).map(i=>dutyCal[i]));
+  const satCarry=[],sunCarry=[],friCarry=[];
+  const sundayDocs={};
+
+  for(const doc of shuffle(NON_G)){
+    if(hasSat.has(doc)) continue;
+    const di=sats.find(i=>canDuty(doc,i));
+    if(di!==undefined){assign(doc,di);hasSat.add(doc);}else satCarry.push(doc);
+  }
+  for(const doc of shuffle(NON_G)){
+    if(hasSun.has(doc)){const f=suns.find(i=>dutyCal[i]===doc);if(f!==undefined)sundayDocs[doc]=f;continue;}
+    const di=suns.find(i=>canDuty(doc,i));
+    if(di!==undefined){assign(doc,di);sundayDocs[doc]=di;hasSun.add(doc);}else sunCarry.push(doc);
+  }
+  const hasFri=new Set(fris.filter(i=>dutyCal[i]!==-1).map(i=>dutyCal[i]));
+  for(const docStr of Object.keys(sundayDocs)){
+    const doc=+docStr;
+    if(hasFri.has(doc)) continue;
+    const di=fris.find(i=>canDuty(doc,i));
+    if(di!==undefined){assign(doc,di);hasFri.add(doc);}else friCarry.push(doc);
+  }
+  const gwDays=shuffle(Array.from({length:D},(_,i)=>i).filter(i=>dowArr[i]>=1&&dowArr[i]<=5));
+  for(const i of gwDays){if(left[G]<=0)break;if(canDuty(G,i))assign(G,i);}
+  for(let pass=0;pass<12;pass++){
+    const days=shuffle(Array.from({length:D},(_,i)=>i));
+    const docOrder=[...NON_G].sort((a,b)=>left[b]-left[a]);
+    for(const doc of docOrder){
+      if(left[doc]<=0) continue;
+      for(const i of days){if(left[doc]<=0)break;if(canDuty(doc,i))assign(doc,i);}
+    }
+  }
+
+  const typeCounts=Array(6).fill(null).map(()=>({icu:0,ot:0,endo:0}));
+  const newSched=[];
+  for(let i=0;i<D;i++){
+    const row=Array(6).fill('');
+    const dd=dutyCal[i],pd=i>0?dutyCal[i-1]:-1;
+    const isSunday=dowArr[i]===0;
+    if(dd>=0) row[dd]='duty';
+    if(pd>=0&&row[pd]==='') row[pd]='pdo';
+    for(let doc=0;doc<6;doc++) if(row[doc]===''&&leaveSet[i].has(doc)) row[doc]='leave';
+    // On Sundays everyone else is on holiday — leave blank
+    if(!isSunday){
+      for(let doc=0;doc<6;doc++){
+        if(row[doc]!=='') continue;
+        const types=doc===G?['icu','ot']:['icu','ot','endo'];
+        const best=types.reduce((a,b)=>typeCounts[doc][a]<=typeCounts[doc][b]?a:b);
+        row[doc]=best;typeCounts[doc][best]++;
+      }
+    }
+    newSched.push(row);
+  }
+  schedule=newSched;
+  saveState();
+  renderTable(D,dowArr);
+  renderStats(D);
+  renderNotices(satCarry,sunCarry,friCarry,left,dutyCal[D-1]!==-1,dutyCal[D-1]);
+  switchTab('table');
+}
+
+function renderTable(D,dowArr){
+  const heads=DOC_SHORT.map(n=>`<th>${n}</th>`).join('');
+  const filterTypes=['all','duty','pdo','icu','ot','endo','leave'];
+  const filterBtns=filterTypes.map(t=>`<button class="fbtn${activeFilter===(t==='all'?'':t)?' active':''}" data-type="${t}" onclick="setFilter('${t==='all'?'':t}')">${t==='all'?'ALL':T_LABEL[t]}</button>`).join('');
+  let rows='';
+  for(let i=0;i<D;i++){
+    const d=dowArr[i],day=i+1;
+    const cls=d===0?'is-sun':d===6?'is-sat':'';
+    const cells=schedule[i].map((type,doc)=>{
+      const show=!activeFilter||(type===activeFilter);
+      const chipCls=show?(T_CLS[type]||'c-empty'):'c-empty';
+      return `<td><span class="chip ${chipCls}" onclick="openSheet(${i},${doc})">${show?(T_LABEL[type]||'-'):'-'}</span></td>`;
+    }).join('');
+    rows+=`<tr class="${cls}"><td><div class="date-cell"><span class="dc-day">${DAYS[d]}</span><span class="dc-num">${day}</span></div></td>${cells}</tr>`;
+  }
+  document.getElementById('tabTable').innerHTML=`
+    <div class="filter-bar"><span class="filter-label">FILTER:</span>${filterBtns}</div>
+    <div class="tbl-scroll">
+    <table class="sticky-table">
+      <thead><tr><th>Date</th>${heads}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+function setFilter(type){
+  activeFilter=type;
+  const D=schedule.length;
+  if(!D) return;
+  const dowArr=Array.from({length:D},(_,i)=>getDow(curYear,curMonth,i+1));
+  renderTable(D,dowArr);
+}
+
+function renderStats(D){
+  if(!schedule.length){return;}
+  const counts=Array(6).fill(null).map(()=>({duty:0,pdo:0,icu:0,ot:0,endo:0,leave:0}));
+  for(let i=0;i<D;i++) for(let doc=0;doc<6;doc++){const t=schedule[i][doc];if(t&&counts[doc][t]!==undefined)counts[doc][t]++;}
+
+  const cards=DOC_NAMES.map((name,doc)=>{
+    const c=counts[doc],tg=curTargets[doc];
+    const ok=c.duty===tg;
+    const boxes=[
+      {t:'duty',v:c.duty,sub:`target ${tg}`},
+      {t:'icu', v:c.icu},
+      {t:'ot',  v:c.ot},
+      {t:'endo',v:c.endo},
+      {t:'pdo', v:c.pdo},
+      {t:'leave',v:c.leave},
+    ].map(({t,v,sub=''})=>`
+      <div class="sc-box" style="background:${T_BG[t]||'rgba(255,255,255,.04)'}">
+        <div class="sc-val" style="color:${T_COL[t]||'#64748b'}">${v}</div>
+        <div class="sc-lbl" style="color:${T_COL[t]||'#64748b'}">${T_LABEL[t]}</div>
+        ${sub?`<div class="sc-target">${sub}</div>`:''}
+      </div>`).join('');
+    return `<div class="stat-card">
+      <div class="sc-top">
+        <span class="sc-name">${DOC_SHORT[doc]}</span>
+        <span class="sc-badge ${ok?'badge-ok':'badge-warn'}">${ok?'✓ On target':'⚠ Check'}</span>
+      </div>
+      <div class="sc-grid">${boxes}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('tabStats').innerHTML=`<div class="stats-header">DOCTOR SUMMARY</div>${cards}`;
+}
+
+function renderNotices(satCarry,sunCarry,friCarry,left,lastHasDuty,lastDoc){
+  const warns=[],infos=[];
+  if(satCarry.length) warns.push(`Sat carryover → next month: ${satCarry.map(d=>DOC_SHORT[d]).join(', ')}`);
+  if(sunCarry.length) warns.push(`Sun carryover → next month: ${sunCarry.map(d=>DOC_SHORT[d]).join(', ')}`);
+  if(friCarry.length) warns.push(`Fri (post-Sun) carryover → first Fri next month: ${friCarry.map(d=>DOC_SHORT[d]).join(', ')}`);
+  const unmet=[];
+  for(let doc=0;doc<6;doc++) if(left[doc]>0) unmet.push(`${DOC_SHORT[doc]} (${left[doc]} short)`);
+  if(unmet.length) warns.push(`Could not fill all duties: ${unmet.join(', ')}`);
+  if(lastHasDuty&&lastDoc>=0) infos.push(`${DOC_SHORT[lastDoc]} duty on last day — PDO spills to 1st of next month`);
+  let html='';
+  if(!warns.length&&!infos.length) html=`<div class="notice n-ok">✅ All duties filled on target</div>`;
+  else{
+    if(warns.length) html+=`<div class="notice n-warn">${warns.map(w=>`<p>⚠ ${w}</p>`).join('')}</div>`;
+    if(infos.length) html+=`<div class="notice n-info">${infos.map(w=>`<p>ℹ ${w}</p>`).join('')}</div>`;
+  }
+  document.getElementById('notices').innerHTML=html;
+}
+
+/* REQUESTS */
+function addReq(){
+  const doc=+document.getElementById('rDoc').value;
+  const type=document.getElementById('rType').value;
+  const day=+document.getElementById('rDay').value;
+  if(!day||day<1||day>31){alert('Enter a valid day (1–31)');return;}
+  if(reqs.some(r=>r.doctor===doc&&r.day===day&&r.type===type)){alert('Already added');return;}
+  reqs.push({doctor:doc,day,type});
+  document.getElementById('rDay').value='';
+  renderReqs();saveState();
+}
+function removeReq(i){reqs.splice(i,1);renderReqs();saveState();}
+function renderReqs(){
+  const el=document.getElementById('reqList');
+  if(!reqs.length){
+    el.innerHTML=`<div class="empty-state" style="padding:20px"><p>No requests added yet</p></div>`;return;
+  }
+  el.innerHTML=reqs.map((r,i)=>`
+    <div class="req-item">
+      <div>
+        <div class="ri-info">${DOC_SHORT[r.doctor]} — Day ${r.day}</div>
+        <div class="ri-sub">${r.type==='duty'?'Duty Request':r.type==='leave'?'Leave':'No Duty'}</div>
+      </div>
+      <button class="ri-del" onclick="removeReq(${i})">✕</button>
+    </div>`).join('');
+}
+
+/* EDIT SHEET */
+function openSheet(r,c){
+  editPos={r,c};
+  const opts=TYPES.map(type=>`
+    <div class="sheet-opt" onclick="applyEdit('${type}')">
+      <div class="so-dot" style="background:${T_DOT[type]}"></div>
+      <div class="so-lbl" style="color:${T_COL[type]||'#475569'}">${T_LABEL[type]||'CLEAR'}</div>
+    </div>`).join('');
+  document.getElementById('sheetOpts').innerHTML=opts;
+  document.getElementById('editSheet').classList.add('open');
+  document.getElementById('overlay').style.display='block';
+}
+function closeSheet(){
+  document.getElementById('editSheet').classList.remove('open');
+  document.getElementById('overlay').style.display='none';
+}
+function applyEdit(type){
+  const{r,c}=editPos;
+  if(r<0){closeSheet();return;}
+  schedule[r][c]=type;
+  if(type==='duty'){
+    for(let doc=0;doc<6;doc++) if(doc!==c&&schedule[r][doc]==='duty') schedule[r][doc]='';
+    if(r+1<schedule.length){
+      for(let doc=0;doc<6;doc++) if(schedule[r+1][doc]==='pdo') schedule[r+1][doc]='';
+      schedule[r+1][c]='pdo';
+    }
+  }
+  closeSheet();saveState();
+  const D=schedule.length;
+  const dowArr=Array.from({length:D},(_,i)=>getDow(curYear,curMonth,i+1));
+  renderTable(D,dowArr);renderStats(D);
+}
+
+/* TABS */
+function switchTab(name){
+  document.getElementById('tabTable').style.display = name==='table' ? 'block' : 'none';
+  document.getElementById('tabStats').style.display = name==='stats' ? 'block' : 'none';
+  document.getElementById('tabReqs' ).style.display = name==='reqs'  ? 'block' : 'none';
+  document.getElementById('tab-table').classList.toggle('active', name==='table');
+  document.getElementById('tab-stats').classList.toggle('active', name==='stats');
+  document.getElementById('tab-reqs' ).classList.toggle('active', name==='reqs');
+  // Re-render table and stats when switching to them so content is always fresh
+  if(name==='table' && schedule.length>0){
+    const D=schedule.length;
+    const dowArr=Array.from({length:D},(_,i)=>getDow(curYear,curMonth,i+1));
+    renderTable(D,dowArr);
+  }
+  if(name==='stats' && schedule.length>0){
+    renderStats(schedule.length);
+  }
+}
+
+/* PERSIST */
+function saveState(){
+  try{localStorage.setItem('rosterMobile',JSON.stringify({schedule,reqs,curMonth,curYear}));}catch(e){}
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem('rosterMobile');
+    if(!raw)return;
+    const s=JSON.parse(raw);
+    schedule=s.schedule||[];reqs=s.reqs||[];
+    curMonth=s.curMonth||3;curYear=s.curYear||2026;
+    document.getElementById('monthSel').value=curMonth;
+    document.getElementById('yearInp').value=curYear;
+    renderReqs();
+    if(schedule.length>0){
+      curTargets=[...BASE_TARGETS];if(schedule.length===31)curTargets[G]=4;
+      const D=schedule.length;
+      const dowArr=Array.from({length:D},(_,i)=>getDow(curYear,curMonth,i+1));
+      renderTable(D,dowArr);renderStats(D);
+    }
+  }catch(e){}
+}
+window.addEventListener('load',loadState);
+</script>
+</body>
+</html>
